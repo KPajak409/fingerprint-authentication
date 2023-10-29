@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# User defined
+data/raw
+notebooks
+/models
+
 # Distribution / packaging
 .Python
 build/
