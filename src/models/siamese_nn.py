@@ -1,5 +1,6 @@
 #%%
 import torch.nn as nn
+from torchsummary import summary
 
 class Siamese_nn(nn.Module):
 
@@ -7,23 +8,25 @@ class Siamese_nn(nn.Module):
         super(Siamese_nn, self).__init__()
 
         self.featureExtractor = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3),
+            nn.Conv2d(1, 32, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(64, 128, kernel_size=3),
+            nn.Conv2d(32, 64, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten()
         )
 
         self.fc = nn.Sequential(
-            nn.Linear(147456, 2048),
+            #147456
+            nn.Linear(73728, 2048),
             nn.ReLU(inplace=True),
             nn.Linear(2048, 1024),
             nn.ReLU(inplace=True),
             nn.Linear(1024, 256),
             nn.ReLU(inplace=True),
             nn.Linear(256, 1)
+            #nn.Sigmoid()
         )
         
     def forwardOne(self, x):
@@ -37,5 +40,6 @@ class Siamese_nn(nn.Module):
         return output1, output2
 
 if __name__ == '__main__':
-    print('hello')
+    model = Siamese_nn().to('cuda')
+    summary(model, [(1, 153, 136), (1, 153, 136)], 2)
 # %%
