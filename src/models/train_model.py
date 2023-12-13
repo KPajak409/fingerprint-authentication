@@ -7,11 +7,16 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from siamese_nn import Siamese_nn
 from src.data.fingerprint_dataset import SiameseDataset
+from pathlib import Path
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 # hyperparams
-batch_size =1
+batch_size = 8
+
+current_dir = Path(__file__)
+project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
 
 
 def train(model, dataloader, criterion, optimizer, num_epochs=10):
@@ -29,7 +34,7 @@ def train(model, dataloader, criterion, optimizer, num_epochs=10):
             optimizer.step()
             
             if i%10==0:
-                print(f'Epoch [{epoch + 1}/{num_epochs}], step: [{i}/{steps}] Loss: {loss.item():.4f}')
+                print(f'Epoch [{epoch + 1}/{num_epochs}], step: [{i}/{len(dataloader)}] Loss: {loss.item():.4f}')
             
 
 class ContrastiveLoss(nn.Module):
@@ -55,44 +60,47 @@ optimizer = optim.Adam(siameseNet.parameters(), lr=0.001)
 
 #%%
 
-train(siameseNet, dataloader, criterion, optimizer, num_epochs=1)
+train(siameseNet, dataloader, criterion, optimizer, num_epochs=7)
+
+#%%
+
+torch.save(siameseNet.state_dict(), f'{project_dir}/models/test')
+
+#%%
+
+siameseNet = Siamese_nn()
+siameseNet.load_state_dict(torch.load(f'{project_dir}/models/test'))
+siameseNet.eval()
 
 # %%
 # Testing results
 import matplotlib.pyplot as plt
 
-with torch.no_grad():
-    test_dataloader = DataLoader(siameseDataset, shuffle=True, batch_size=9)
-    test_dataloader_iter = iter(test_dataloader)
-    images1, images2, label = next(test_dataloader_iter)
 
-    siameseNet = siameseNet.to('cpu')
-    out1, out2 = siameseNet(images1, images2)
-    # problem with contrastive loss
-    print(out1.shape, out2.shape)
-    pred = criterion.forward(out1[0], out2[0], label[0])
-    pred2 = criterion.forward(out1, out2, label)
+test_dataloader = DataLoader(siameseDataset, shuffle=True, batch_size=9)
+test_dataloader_iter = iter(test_dataloader)
+images1, images2, label = next(test_dataloader_iter)
+
+siameseNet = siameseNet.to('cpu')
+out1, out2 = siameseNet(images1, images2)
+
+images1 = torch.permute(images1, (0,2,3,1))
+images2 = torch.permute(images2, (0,2,3,1))
+
+plt.rcParams.update({'font.size': 6})
+for i in range(images1.shape[0]):
+    pair = torch.hstack((images1[i], images2[i]))
+    pred = criterion.forward(out1[i], out2[i], label[i])
+    plt.subplot(3,3,i+1)
     
-    print(pred, pred2)
-    
-    images1 = torch.permute(images1, (0,2,3,1))
-    images2 = torch.permute(images2, (0,2,3,1))
-    
-    plt.rcParams.update({'font.size': 6})
-    for i in range(images1.shape[0]):
-        pair = torch.hstack((images1[i], images2[i]))
-        pred = criterion.forward(out1[0], out2[0], label[0])
-        plt.subplot(3,3,i+1)
-        
-        plt.xticks([])
-        plt.yticks([])
-        plt.title(f'{label[i].item()} CL: {round(pred.item(),5)}')
-        plt.tight_layout()
-        plt.imshow(pair)
+    plt.xticks([])
+    plt.yticks([])
+    plt.title(f'{label[i].item()} CL: {round(pred.item(),5)}')
+    plt.tight_layout()
+    plt.imshow(pair)
     
 
 # %%
-
 class_balance = torch.tensor((0,0))
 for i, (img1, img2, label) in enumerate(dataloader):
     if label == 0:
