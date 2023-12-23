@@ -31,12 +31,11 @@ class SiameseDataset(Dataset):
               if(userImage != userImageCopy):
                 self.data.append([userImage, userImageCopy, 1.0])
                 self.data.append([userImage, notUsersImages[random.randrange(len(notUsersImages))], 0.0])
-              
-        print(self.data)
 
         
     def __len__(self):
         return len(self.data)
+      
 
     def __getitem__(self, index):
         img1 = Image.open(out_path + '\\' + self.data[index][0])

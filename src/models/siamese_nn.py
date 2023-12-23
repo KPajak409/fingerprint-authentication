@@ -18,15 +18,11 @@ class Siamese_nn(nn.Module):
         )
 
         self.fc = nn.Sequential(
-            #147456
             nn.Linear(73728, 2048),
             nn.ReLU(inplace=True),
             nn.Linear(2048, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(1024, 256),
-            nn.ReLU(inplace=True),
-            nn.Linear(256, 1)
-            #nn.Sigmoid()
+            nn.Linear(1024, 256)
         )
         
     def forwardOne(self, x):
