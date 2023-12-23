@@ -1,5 +1,5 @@
 #%%
-import torch, math, wandb, os
+import torch, wandb, os
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,8 +8,6 @@ from torchvision import transforms
 from siamese_nn import Siamese_nn
 from src.data.fingerprint_dataset import SiameseDataset
 from pathlib import Path
-from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-
 
 current_dir = Path(__file__)
 project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
@@ -65,8 +63,8 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
             wandb.log({"loss": loss})
             if i%1==0:
                 print(f'Epoch [{epoch + 1}/{config.epochs}], step: [{i}/{len(train_loader)}] Loss: {loss.item():.4f}')
-            if i%100==0:
-                if (label.item() == 1 and loss > 3.99) or (label.item() == 0 and loss < 0.001):
+            if i%200==0:
+                if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
                     torch.save(model.state_dict(), f'{project_dir}/models/training{i}')
                     break
                     
@@ -124,8 +122,7 @@ class ContrastiveLoss(nn.Module):
         return lossContrastive
     
 
-def model_pipeline(hyperparameters, wandb_mode = 'online'):
-    
+def model_pipeline(hyperparameters, wandb_mode = 'online'): 
     with wandb.init(project='fingerprint-authentication-ISU', config=hyperparameters, mode = wandb_mode):
         config = wandb.config
         
@@ -147,15 +144,3 @@ model, _, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disable
 
 test(model, test_loader, criterion)
 
-#%%
-
-torch.save(model.state_dict(), f'{project_dir}/models/test')
-
-#%%
-
-siameseNet = Siamese_nn()
-siameseNet.load_state_dict(torch.load(f'{project_dir}/models/test'))
-siameseNet.eval()
-
-#%%
-wandb.finish()
