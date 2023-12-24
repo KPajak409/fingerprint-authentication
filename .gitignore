@@ -13,6 +13,7 @@ data/final
 notebooks
 /models
 src/models/wandb
+scans
 
 # Distribution / packaging
 .Python
