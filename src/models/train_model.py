@@ -3,15 +3,23 @@ import torch, wandb, os
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+import imp
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from siamese_nn import Siamese_nn
 from src.data.fingerprint_dataset import SiameseDataset
 from pathlib import Path
 
+#workaround 1
+#siameseNNSource = imp.load_source('siamese_nn', '../siamese_nn.py')
+#siameseDatasetSource = imp.load_source('fingerprint_dataset', '../fingerprint_dataset.py')
+
 current_dir = Path(__file__)
 project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
 os.environ["WANDB_NOTEBOOK_NAME"] = os.getcwd()
+print(torch.cuda.is_available())
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #device = torch.device("cpu")
 print(f'Active device: {device}')
@@ -32,8 +40,11 @@ def make(config):
     siameseDataset = SiameseDataset(transform=transform, device=device)
     train_ds, test_ds = random_split(siameseDataset, config.split)
     train_loader = DataLoader(train_ds, shuffle=True, batch_size=config.batch_size)
-    test_loader = DataLoader(test_ds, shuffle=True, batch_size=9)
-
+    
+    #To jest do podmiany
+    #test_loader = DataLoader(test_ds, shuffle=True, batch_size=9)
+    test_loader = DataLoader(test_ds, shuffle=True, batch_size=1)
+    
     model = Siamese_nn().to(device)
     criterion = ContrastiveLoss()
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
@@ -65,7 +76,8 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
                 print(f'Epoch [{epoch + 1}/{config.epochs}], step: [{i}/{len(train_loader)}] Loss: {loss.item():.4f}')
             if i%200==0:
                 if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
-                    torch.save(model.state_dict(), f'{project_dir}/models/training{i}')
+                    #zakomentowane bo nie dziala mi
+                    #torch.save(model.state_dict(), f'{project_dir}\models\training{i}')
                     break
                     
                 
@@ -120,8 +132,66 @@ class ContrastiveLoss(nn.Module):
         lossContrastive = torch.mean((1 - label) * torch.pow(distance, 2) +
                                       (label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2))
         return lossContrastive
-    
+#%% 
 
+def calculateConfusionMatrixAndThreshold(model, train_loader, test_loader):
+    with torch.no_grad():
+        transform = transforms.Compose([transforms.ToTensor()]) 
+        siameseDataset = SiameseDataset(transform=transform, device=device)
+        dataLoader = DataLoader(siameseDataset, shuffle=True, batch_size=1)
+        
+        samples = 500
+        
+        iter_disp = 1
+        
+        predicted = []
+        actual = []
+        histogramValues = []
+        for i in range(samples):
+            #images1, images2, label = next(iter(dataLoader))
+            images1, images2, label = next(iter(test_loader))
+            #images1, images2, label = next(iter(train_loader))
+            
+            images1 = images1.to(device)
+            images2 = images2.to(device)
+            label = label.to(device)     
+            model = model.to(device)
+    
+            out1, out2 = model(images1, images2)
+            
+            placeholder = criterion.forward(out1,out2,label)
+            actual.append(siameseDataset[i][2].item())
+            histogramValues.append(placeholder.item())
+            if siameseDataset[i][2].item() == 1.0:
+                if placeholder.item() > 3:
+                    predicted.append(1.0)
+                else:
+                    predicted.append(0.0)
+            elif siameseDataset[i][2].item() == 0.0:
+                if placeholder.item() < 1:
+                    predicted.append(0.0)
+                else:
+                    predicted.append(1.0)
+            
+            #print(siameseDataset[i][2].item(), ' ', predicted[i])        
+                    
+            print(iter_disp, '/', samples, end = "\r")
+            iter_disp = iter_disp + 1
+            
+        listToSetHistogramValues = set(histogramValues)
+        uniqueHistogramValues = list(listToSetHistogramValues)
+
+        cm = confusion_matrix(actual, predicted)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.figure(0)
+        plt.show()
+        plt.figure(1)
+        plt.hist(histogramValues, bins=len(uniqueHistogramValues))
+        plt.show()
+    return 0
+
+#%%
 def model_pipeline(hyperparameters, wandb_mode = 'online'): 
     with wandb.init(project='fingerprint-authentication-ISU', config=hyperparameters, mode = wandb_mode):
         config = wandb.config
@@ -133,14 +203,22 @@ def model_pipeline(hyperparameters, wandb_mode = 'online'):
         
         test(model, test_loader, criterion, 'cpu')
         
+        #calculateConfusionMatrixAndThreshold(model, train_loader, test_loader)
+        
     return model, train_loader, test_loader, criterion, optimizer
 
 #%%
 
 # wandb_mode disabled for turn off logging
-model, _, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disabled')
+model, train_loader, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disabled')
 
 #%%
 
 test(model, test_loader, criterion)
 
+#%%
+
+calculateConfusionMatrixAndThreshold(model, train_loader, test_loader)
+
+
+# %%
