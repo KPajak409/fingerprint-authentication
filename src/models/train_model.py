@@ -34,15 +34,24 @@ config = dict(
     architecture="Siamese-neural-network"
 )
 
+class ContrastiveLoss(nn.Module):
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        distance = F.pairwise_distance(output1, output2)
+        lossContrastive = torch.mean((1 - label) * torch.pow(distance, 2) +
+                                      (label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2))
+        return lossContrastive
+
+
 def make(config):
     transform = transforms.Compose([transforms.ToTensor()])
 
     siameseDataset = SiameseDataset(transform=transform, device=device)
     train_ds, test_ds = random_split(siameseDataset, config.split)
-    train_loader = DataLoader(train_ds, shuffle=True, batch_size=config.batch_size)
-    
-    #To jest do podmiany
-    #test_loader = DataLoader(test_ds, shuffle=True, batch_size=9)
+    train_loader = DataLoader(train_ds, shuffle=True, batch_size=config.batch_size)   
     test_loader = DataLoader(test_ds, shuffle=True, batch_size=1)
     
     model = Siamese_nn().to(device)
@@ -60,7 +69,7 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
     wandb.watch(model, log_freq=100)
     
     for epoch in range(config.epochs):
-
+        
         for i, (img1, img2, label) in enumerate(train_loader):
             model.train()
             optimizer.zero_grad()
@@ -78,8 +87,7 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
                 if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
                     #zakomentowane bo nie dziala mi
                     #torch.save(model.state_dict(), f'{project_dir}\models\training{i}')
-                    break
-                    
+                    break             
                 
         model.eval()
         img_list = []
@@ -118,40 +126,14 @@ def test(model, test_loader, criterion, device):
         plt.title(f'{label_test[i].item()} CL: {pred.item():.4f}')
         plt.tight_layout()
         plt.imshow(pair)
-   
-def checkpoint(model, filename):
-    torch.save(model.state_dict(), filename)       
-
-class ContrastiveLoss(nn.Module):
-    def __init__(self, margin=2.0):
-        super(ContrastiveLoss, self).__init__()
-        self.margin = margin
-
-    def forward(self, output1, output2, label):
-        distance = F.pairwise_distance(output1, output2)
-        lossContrastive = torch.mean((1 - label) * torch.pow(distance, 2) +
-                                      (label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2))
-        return lossContrastive
-#%% 
-
-def calculateConfusionMatrixAndThreshold(model, train_loader, test_loader):
+          
+          
+def calculateConfusionMatrixAndThreshold(model, data_loader, criterion):
     with torch.no_grad():
-        transform = transforms.Compose([transforms.ToTensor()]) 
-        siameseDataset = SiameseDataset(transform=transform, device=device)
-        dataLoader = DataLoader(siameseDataset, shuffle=True, batch_size=1)
-        
-        samples = 500
-        
-        iter_disp = 1
-        
         predicted = []
         actual = []
         histogramValues = []
-        for i in range(samples):
-            #images1, images2, label = next(iter(dataLoader))
-            images1, images2, label = next(iter(test_loader))
-            #images1, images2, label = next(iter(train_loader))
-            
+        for i, (images1, images2, label) in enumerate(data_loader):
             images1 = images1.to(device)
             images2 = images2.to(device)
             label = label.to(device)     
@@ -160,23 +142,21 @@ def calculateConfusionMatrixAndThreshold(model, train_loader, test_loader):
             out1, out2 = model(images1, images2)
             
             placeholder = criterion.forward(out1,out2,label)
-            actual.append(siameseDataset[i][2].item())
+            actual.append(label.item())
             histogramValues.append(placeholder.item())
-            if siameseDataset[i][2].item() == 1.0:
-                if placeholder.item() > 3:
+            if label.item() == 1.0:
+                if placeholder.item() > 3.8:
                     predicted.append(1.0)
                 else:
                     predicted.append(0.0)
-            elif siameseDataset[i][2].item() == 0.0:
-                if placeholder.item() < 1:
+            elif label.item() == 0.0:
+                if placeholder.item() < 0.2:
                     predicted.append(0.0)
                 else:
                     predicted.append(1.0)
-            
-            #print(siameseDataset[i][2].item(), ' ', predicted[i])        
                     
-            print(iter_disp, '/', samples, end = "\r")
-            iter_disp = iter_disp + 1
+            print(i, '/', len(data_loader.dataset), end = "\r")
+            
             
         listToSetHistogramValues = set(histogramValues)
         uniqueHistogramValues = list(listToSetHistogramValues)
@@ -188,8 +168,8 @@ def calculateConfusionMatrixAndThreshold(model, train_loader, test_loader):
         plt.show()
         plt.figure(1)
         plt.hist(histogramValues, bins=len(uniqueHistogramValues))
+        plt.ylim(0,10)
         plt.show()
-    return 0
 
 #%%
 def model_pipeline(hyperparameters, wandb_mode = 'online'): 
@@ -199,11 +179,11 @@ def model_pipeline(hyperparameters, wandb_mode = 'online'):
         model, train_loader, test_loader, criterion, optimizer = make(config)
         print(model)
         
-        train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
+        #train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
         
         test(model, test_loader, criterion, 'cpu')
         
-        #calculateConfusionMatrixAndThreshold(model, train_loader, test_loader)
+        #calculateConfusionMatrixAndThreshold(model, test_loader criterion)
         
     return model, train_loader, test_loader, criterion, optimizer
 
@@ -214,11 +194,13 @@ model, train_loader, test_loader, criterion, _ = model_pipeline(config, wandb_mo
 
 #%%
 
-test(model, test_loader, criterion)
+weights =  torch.load(f'{project_dir}/models/training3700')
+model.load_state_dict(weights)
 
 #%%
 
-calculateConfusionMatrixAndThreshold(model, train_loader, test_loader)
+calculateConfusionMatrixAndThreshold(model, test_loader, criterion)
 
 
 # %%
+test(model, test_loader, criterion, 'cpu')
