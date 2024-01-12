@@ -1,3 +1,58 @@
+#%%
+from pathlib import Path
+from PIL import Image
+import os, glob, math
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+
+
+current_dir = Path(__file__)
+project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
+
+dest_path_processed = f'{project_dir}\\scans\\processed\\'
+source_path_raw = f'{project_dir}\\scans\\raw\\'
+    
+def scan_preprocess(file_name):
+    threshold = 160
+
+    img = np.array(Image.open(source_path_raw + file_name))
+    left, right, up, down = 0,0,0,0
+
+    # cutting white space in images
+    for i in range(img.shape[0]-1): 
+        if min(img[i,:]) < threshold:
+            left = i
+            break
+    for i in range(img.shape[0]-1): 
+        if min(img[-i-1,:]) < threshold:
+            right = img.shape[0] - i
+            break
+    for i in range(img.shape[1]-1): 
+        if min(img[:,i]) < threshold:
+            up = i
+            break
+    for i in range(img.shape[1]-1):         
+        if min(img[:,-i]) < threshold:
+            down = img.shape[1] - i
+            break
+
+    img_stripped = img[left:right, up:down]
+    print(f'removing white space {file_name}')
+
+    # transformations on ds
+    img_dilation = cv2.dilate(img_stripped, (5,5), iterations=1)
+    #img_erosion = cv2.erode(img, (5,5), iterations=2) # not particularly useful
+    img_binarized = cv2.adaptiveThreshold(img_dilation, 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
+                                                cv2.THRESH_BINARY, 11, 2)
+
+    # scale down and save
+    img_final = Image.fromarray(img_binarized)
+    img_final.thumbnail((136,153))
+    img_final.save(dest_path_processed+file_name)
+    
+
+# -------------------------------------------------------------------------
 # Written by Brian Ejike (2017)
 # Distributed under the MIT License
 
@@ -13,12 +68,6 @@ DEPTH = 8
 HEADER_SZ = 54
 
 portSettings = ['COM6', 57600]
-
-current_dir = Path(__file__)
-project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
-
-print("----------Extract Fingerprint Image------------")
-print()
 
 # assemble bmp header for a grayscale image
 def assembleHeader(width, height, depth, cTable=False):
@@ -47,48 +96,14 @@ def assembleHeader(width, height, depth, cTable=False):
     #header[46:50] = (0).to_bytes(4, byteorder='little')
     #header[50:54] = (0).to_bytes(4, byteorder='little')
     return header
-
-def options():
-    print("Options:")
-    print("\tPress 1 to enter serial port settings")
-    print("\tPress 2 to scan a fingerprint and save the image")
-    print("\tPress 3 to view help")
-    print("\tPress 4 to exit")
-    print()
-    choice = input(">> ")
-    print()
-    return choice
-
-def getSettings():
-    portSettings[0] = input("Enter Arduino serial port number: ")
-    portSettings[1] = int(input('Enter serial port baud rate: '))
-    print()
+    
     
 def getPrint():
-    '''
-    First enter the port settings with menu option 1:
-    >>> Enter Arduino serial port number: COM13
-    >>> Enter serial port baud rate: 57600
-
-    Then enter the filename of the image with menu option 2: 
-    >>> Enter filename/path of output file (without extension): myprints
-    Found fingerprint sensor!
-    .
-    .
-    .
-    (Here you communicate with the Arduino and follow instructions)
-    .
-    .
-    .
-    Extracting image...saved as <filename>.bmp
-
-    '''
-    
     user_unique_id = uuid.uuid4()
     # version for testing
     # out = open(input("Enter filename/path of output file (without extension): ")+'.bmp', 'xb',)
     # path to create scan named by user id
-    out = open(f'{project_dir}/scans/{user_unique_id}.bmp', 'xb')
+    out = open(f'{source_path_raw}{user_unique_id}.bmp', 'xb')
     
     
     # assemble and write the BMP header to the file
@@ -103,7 +118,7 @@ def getPrint():
         print('Invalid port settings:', e)
         print()
         out.close()
-        return
+        return False
     while ser.isOpen():
         try:
             # assumes everything recved at first is printable ascii
@@ -136,31 +151,17 @@ def getPrint():
             ser.close()
             
             print()
-            return True
+            return out.name
         except Exception as e:
             print("Read failed: ", e)
             out.close()
             ser.close()
+            os.remove(f'{source_path_raw}{user_unique_id}.bmp')
             return False
         except KeyboardInterrupt:
             print("Closing port.")
             out.close()
             ser.close()
+            os.remove(f'{source_path_raw}{user_unique_id}.bmp')
             return False
-
-while True:
-    chose = options()
-    if chose == "4":
-        break
-    elif chose == '1':
-        getSettings()
-    elif chose == "2":
-        res = getPrint()
-        if not res:
-            print("Image extraction failed!")
-        continue
-    elif chose == '3':
-        print('================= HELP ==================')
-        print(getPrint.__doc__)
-        print('=========================================')
-
+    
