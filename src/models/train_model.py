@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from siamese_nn import Siamese_nn
+from src.models.siamese_nn import Siamese_nn
 from src.data.fingerprint_dataset import SiameseDataset
 from pathlib import Path
 
@@ -27,9 +27,9 @@ print(f'Active device: {device}')
 # hyperparams
 config = dict(
     epochs=1,
-    batch_size=1,
+    batch_size=16,
     learning_rate=0.001,
-    split=[0.8, 0.2],
+    split=[0.95, 0.05],
     dataset="fingerprints-dataset",
     architecture="Siamese-neural-network"
 )
@@ -83,11 +83,11 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
             wandb.log({"loss": loss})
             if i%1==0:
                 print(f'Epoch [{epoch + 1}/{config.epochs}], step: [{i}/{len(train_loader)}] Loss: {loss.item():.4f}')
-            if i%200==0:
-                if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
-                    #zakomentowane bo nie dziala mi
-                    #torch.save(model.state_dict(), f'{project_dir}\models\training{i}')
-                    break             
+            # if i%200==0:
+            #     if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
+            #         #zakomentowane bo nie dziala mi
+            #         torch.save(model.state_dict(), f'{project_dir}\\models\\training{i}')
+                    # return             
                 
         model.eval()
         img_list = []
@@ -168,39 +168,37 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion):
         plt.show()
         plt.figure(1)
         plt.hist(histogramValues, bins=len(uniqueHistogramValues))
-        plt.ylim(0,10)
+        #plt.ylim(0,10)
         plt.show()
 
-#%%
+
 def model_pipeline(hyperparameters, wandb_mode = 'online'): 
     with wandb.init(project='fingerprint-authentication-ISU', config=hyperparameters, mode = wandb_mode):
         config = wandb.config
         
         model, train_loader, test_loader, criterion, optimizer = make(config)
+        # model = Siamese_nn().to(device)
+        # weights =  torch.load(f'{project_dir}/models/new_test1')
+        # model.load_state_dict(weights)
         print(model)
         
-        #train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
+        train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
         
-        test(model, test_loader, criterion, 'cpu')
+        #test(model, test_loader, criterion, 'cpu')
         
-        #calculateConfusionMatrixAndThreshold(model, test_loader criterion)
+        #calculateConfusionMatrixAndThreshold(model, test_loader, criterion)
         
     return model, train_loader, test_loader, criterion, optimizer
 
 #%%
-
-# wandb_mode disabled for turn off logging
-model, train_loader, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disabled')
-
+if __name__ == '__main__':
+    # wandb_mode disabled for turn off logging
+    model, train_loader, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disabled')
 #%%
-
-weights =  torch.load(f'{project_dir}/models/training3700')
-model.load_state_dict(weights)
-
-#%%
-
-calculateConfusionMatrixAndThreshold(model, test_loader, criterion)
-
-
-# %%
-test(model, test_loader, criterion, 'cpu')
+if __name__ == '__main__':
+    torch.save(model.state_dict(), f'{project_dir}\\models\\new_test1')
+    # model = Siamese_nn()
+    # weights =  torch.load(f'{project_dir}/models/reduced_params')
+    # model.load_state_dict(weights)
+    # calculateConfusionMatrixAndThreshold(model, test_loader, criterion)
+    # test(model, test_loader, criterion, 'cpu')

@@ -13,11 +13,12 @@ project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authe
 dest_path_processed = f'{project_dir}\\scans\\processed\\'
 source_path_raw = f'{project_dir}\\scans\\raw\\'
     
-def scan_preprocess(file_name):
+def scan_preprocess(file_name, login = False):
     threshold = 160
 
-    img = np.array(Image.open(source_path_raw + file_name))
+    img = np.array(Image.open(f'{source_path_raw}{file_name}.bmp'))
     left, right, up, down = 0,0,0,0
+    print(img.shape)
 
     # cutting white space in images
     for i in range(img.shape[0]-1): 
@@ -38,18 +39,51 @@ def scan_preprocess(file_name):
             break
 
     img_stripped = img[left:right, up:down]
-    print(f'removing white space {file_name}')
-
+    print(f'img_stripped shape: {img_stripped.shape}')
     # transformations on ds
     img_dilation = cv2.dilate(img_stripped, (5,5), iterations=1)
     #img_erosion = cv2.erode(img, (5,5), iterations=2) # not particularly useful
     img_binarized = cv2.adaptiveThreshold(img_dilation, 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
                                                 cv2.THRESH_BINARY, 11, 2)
 
+    height = img_binarized.shape[0]
+    width = img_binarized.shape[1]
+
+    # width:height ratio should be 1:1,125
+    if round(height/width, 3) > 1.125:
+        target_height = round(width * 1.125)
+        n_rows_to_del = height - target_height
+        if n_rows_to_del%2==0:
+            n_rows_half = int(n_rows_to_del/2)
+            bottom_idx = img.shape[0]-n_rows_half
+            img_final = Image.fromarray(img[n_rows_half:bottom_idx, :])
+        else:
+            n_rows_half = int(math.floor(n_rows_to_del/2))
+            bottom_idx = img.shape[0]-n_rows_half-1
+            img_final = Image.fromarray(img[n_rows_half:bottom_idx, :])   
+        print(f'cutting H {file_name}.bmp')
+    elif round(height/width, 3) < 1.125:
+        target_width = round(height/1.125)
+        n_cols_to_del = width - target_width
+        if n_cols_to_del%2==0:
+            n_cols_half = int(n_cols_to_del/2)
+            right_idx = img.shape[1]-n_cols_half
+            img_final = Image.fromarray(img[:, n_cols_half:right_idx])
+        else:
+            n_cols_half = int(math.floor(n_cols_to_del/2))
+            right_idx = img.shape[1]-n_cols_half-1
+            img_final = Image.fromarray(img[:, n_cols_half:right_idx])  
+        print(f'cutting W {file_name}.bmp')
+
     # scale down and save
     img_final = Image.fromarray(img_binarized)
     img_final.thumbnail((136,153))
-    img_final.save(dest_path_processed+file_name)
+    if login:
+        #os.remove(f'{source_path_raw}{file_name}.bmp')
+        return img_final
+    else:
+        img_final.save(dest_path_processed+file_name+'.bmp')
+        os.remove(f'{source_path_raw}{file_name}.bmp')
     
 
 # -------------------------------------------------------------------------
@@ -97,27 +131,24 @@ def assembleHeader(width, height, depth, cTable=False):
     #header[50:54] = (0).to_bytes(4, byteorder='little')
     return header
     
-    
-def getPrint():
-    user_unique_id = uuid.uuid4()
+
+def getPrint(login):
     # version for testing
     # out = open(input("Enter filename/path of output file (without extension): ")+'.bmp', 'xb',)
     # path to create scan named by user id
-    out = open(f'{source_path_raw}{user_unique_id}.bmp', 'xb')
-    
+    out = bytearray()
     
     # assemble and write the BMP header to the file
-    out.write(assembleHeader(WIDTH, HEIGHT, DEPTH, True))
+    out += assembleHeader(WIDTH, HEIGHT, DEPTH, True)
     for i in range(256):
         # write the colour palette
-        out.write(i.to_bytes(1,byteorder='little') * 4)
+        out += i.to_bytes(1,byteorder='little') * 4
     try:
         # open the port; timeout is 1 sec; also resets the arduino
         ser = serial.Serial(portSettings[0], portSettings[1], timeout=1)
     except Exception as e:
         print('Invalid port settings:', e)
         print()
-        out.close()
         return False
     while ser.isOpen():
         try:
@@ -133,35 +164,37 @@ def getPrint():
                 # if we get nothing after the 1 sec timeout period
                 if not byte:
                     print("Timeout!")
-                    out.close()  # close port and file
                     ser.close()
                     return False
                     
                 # Since each received byte contains info for 2 adjacent pixels,
                 # assume that both pixels were originally close enough in colour
                 # to now be assigned the same colour
-                out.write(byte * 2)
+                out += byte * 2
                 
-            out.close()  # close file
-            print('Image saved as', out.name)
+            #out.close()  # close file
+            print('Image saved as')
             
             # read anything that's left and print
             left = ser.read(100)
             print(left.decode('ascii', errors='ignore'))
             ser.close()
             
-            print()
-            return out.name
+            
+            file = open(f'{source_path_raw}{login}.bmp', 'xb')
+            file.write(out)
+            file.close()
+            return file.name
         except Exception as e:
             print("Read failed: ", e)
-            out.close()
+            #out.close()
             ser.close()
-            os.remove(f'{source_path_raw}{user_unique_id}.bmp')
+            #os.remove(f'{source_path_raw}{user_unique_id}.bmp')
             return False
         except KeyboardInterrupt:
             print("Closing port.")
-            out.close()
+            #out.close()
             ser.close()
-            os.remove(f'{source_path_raw}{user_unique_id}.bmp')
+            #os.remove(f'{source_path_raw}{user_unique_id}.bmp')
             return False
     

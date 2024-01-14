@@ -8,21 +8,23 @@ class Siamese_nn(nn.Module):
         super(Siamese_nn, self).__init__()
 
         self.featureExtractor = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3),
+            nn.Conv2d(1, 64, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(32, 64, kernel_size=3),
+            nn.Conv2d(128, 256, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),  
+            nn.Conv2d(256, 256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten()
         )
-
         self.fc = nn.Sequential(
-            nn.Linear(73728, 2048),
+            nn.Linear(65280, 512),
             nn.ReLU(inplace=True),
-            nn.Linear(2048, 1024),
-            nn.ReLU(inplace=True),
-            nn.Linear(1024, 256)
+            nn.Linear(512,256)
         )
         
     def forwardOne(self, x):
@@ -37,5 +39,5 @@ class Siamese_nn(nn.Module):
 
 if __name__ == '__main__':
     model = Siamese_nn().to('cuda')
-    summary(model, [(1, 153, 136), (1, 153, 136)], 2)
+    summary(model, [(1, 153, 136), (1, 153, 136)], 1)
 # %%

@@ -29,8 +29,8 @@ class SiameseDataset(Dataset):
           for userImage in usersImages:
             for userImageCopy in usersImages:
               if(userImage != userImageCopy):
-                self.data.append([userImage, userImageCopy, 1.0])
-                self.data.append([userImage, notUsersImages[random.randrange(len(notUsersImages))], 0.0])
+                self.data.append([userImage, userImageCopy, 0.0])
+                self.data.append([userImage, notUsersImages[random.randrange(len(notUsersImages))], 1.0])
 
         
     def __len__(self):
