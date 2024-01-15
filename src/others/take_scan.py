@@ -39,7 +39,6 @@ def scan_preprocess(file_name, login = False):
             break
 
     img_stripped = img[left:right, up:down]
-    print(f'img_stripped shape: {img_stripped.shape}')
     # transformations on ds
     img_dilation = cv2.dilate(img_stripped, (5,5), iterations=1)
     #img_erosion = cv2.erode(img, (5,5), iterations=2) # not particularly useful

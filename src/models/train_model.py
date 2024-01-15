@@ -26,21 +26,21 @@ print(f'Active device: {device}')
 
 # hyperparams
 config = dict(
-    epochs=1,
-    batch_size=16,
-    learning_rate=0.001,
-    split=[0.95, 0.05],
+    epochs=20,
+    batch_size=32,
+    learning_rate=0.0001,
+    split=[0.9, 0.1],
     dataset="fingerprints-dataset",
     architecture="Siamese-neural-network"
 )
 
 class ContrastiveLoss(nn.Module):
-    def __init__(self, margin=2.0):
+    def __init__(self, margin=1.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
 
     def forward(self, output1, output2, label):
-        distance = F.pairwise_distance(output1, output2)
+        distance = F.pairwise_distance(output1, output2, keepdim=True)
         lossContrastive = torch.mean((1 - label) * torch.pow(distance, 2) +
                                       (label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2))
         return lossContrastive
@@ -52,7 +52,7 @@ def make(config):
     siameseDataset = SiameseDataset(transform=transform, device=device)
     train_ds, test_ds = random_split(siameseDataset, config.split)
     train_loader = DataLoader(train_ds, shuffle=True, batch_size=config.batch_size)   
-    test_loader = DataLoader(test_ds, shuffle=True, batch_size=1)
+    test_loader = DataLoader(test_ds, shuffle=False, batch_size=10)
     
     model = Siamese_nn().to(device)
     criterion = ContrastiveLoss()
@@ -81,13 +81,11 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
-            if i%1==0:
+            if i%100==0:
                 print(f'Epoch [{epoch + 1}/{config.epochs}], step: [{i}/{len(train_loader)}] Loss: {loss.item():.4f}')
-            # if i%200==0:
-            #     if (label.item() == 1 and abs(loss - 4) < 0.0001) or (label.item() == 0 and loss < 0.0001):
-            #         #zakomentowane bo nie dziala mi
-            #         torch.save(model.state_dict(), f'{project_dir}\\models\\training{i}')
-                    # return             
+          
+        if (epoch+1)%5==0:
+            torch.save(model.state_dict(), f'{project_dir}\\models\\6cv_1fc_lr0005_e{epoch+1}')             
                 
         model.eval()
         img_list = []
@@ -118,8 +116,8 @@ def test(model, test_loader, criterion, device):
     plt.rcParams.update({'font.size': 6})
     for i in range(images1.shape[0]):
         pair = torch.hstack((images1[i], images2[i]))
-        pred = criterion.forward(out1[i], out2[i], label_test[i])
-        plt.subplot(3,3,i+1)
+        pred = F.pairwise_distance(out1[i], out2[i])
+        plt.subplot(2,5,i+1)
         
         plt.xticks([])
         plt.yticks([])
@@ -128,7 +126,7 @@ def test(model, test_loader, criterion, device):
         plt.imshow(pair)
           
           
-def calculateConfusionMatrixAndThreshold(model, data_loader, criterion):
+def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshold=1.0):
     with torch.no_grad():
         predicted = []
         actual = []
@@ -140,23 +138,21 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion):
             model = model.to(device)
     
             out1, out2 = model(images1, images2)
-            
-            placeholder = criterion.forward(out1,out2,label)
-            actual.append(label.item())
-            histogramValues.append(placeholder.item())
-            if label.item() == 1.0:
-                if placeholder.item() > 3.8:
-                    predicted.append(1.0)
-                else:
-                    predicted.append(0.0)
-            elif label.item() == 0.0:
-                if placeholder.item() < 0.2:
-                    predicted.append(0.0)
-                else:
-                    predicted.append(1.0)
-                    
-            print(i, '/', len(data_loader.dataset), end = "\r")
-            
+            for i in range(images1.shape[0]):
+                placeholder = F.pairwise_distance(out1[i], out2[i])
+                actual.append(label[i].item())
+                histogramValues.append(placeholder.item())
+                if label[i].item() == 1.0:
+                    if placeholder.item() > threshold:
+                        predicted.append(1.0)
+                    else:
+                        predicted.append(0.0)
+                elif label[i].item() == 0.0:
+                    if placeholder.item() <= threshold:
+                        predicted.append(0.0)
+                    else:
+                        predicted.append(1.0)
+                              
             
         listToSetHistogramValues = set(histogramValues)
         uniqueHistogramValues = list(listToSetHistogramValues)
@@ -168,7 +164,7 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion):
         plt.show()
         plt.figure(1)
         plt.hist(histogramValues, bins=len(uniqueHistogramValues))
-        #plt.ylim(0,10)
+        #plt.ylim(50)
         plt.show()
 
 
@@ -177,16 +173,13 @@ def model_pipeline(hyperparameters, wandb_mode = 'online'):
         config = wandb.config
         
         model, train_loader, test_loader, criterion, optimizer = make(config)
-        # model = Siamese_nn().to(device)
-        # weights =  torch.load(f'{project_dir}/models/new_test1')
-        # model.load_state_dict(weights)
         print(model)
+        weights =  torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka')
+        model.load_state_dict(weights)
+        #train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
+        test(model, test_loader, criterion, 'cpu')
         
-        train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
-        
-        #test(model, test_loader, criterion, 'cpu')
-        
-        #calculateConfusionMatrixAndThreshold(model, test_loader, criterion)
+        calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0)
         
     return model, train_loader, test_loader, criterion, optimizer
 
@@ -196,7 +189,7 @@ if __name__ == '__main__':
     model, train_loader, test_loader, criterion, _ = model_pipeline(config, wandb_mode='disabled')
 #%%
 if __name__ == '__main__':
-    torch.save(model.state_dict(), f'{project_dir}\\models\\new_test1')
+    torch.save(model.state_dict(), f'{project_dir}\\models\\3c2fc_douczacz10')
     # model = Siamese_nn()
     # weights =  torch.load(f'{project_dir}/models/reduced_params')
     # model.load_state_dict(weights)

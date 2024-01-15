@@ -15,7 +15,7 @@ processed_path = f'{project_dir}\\scans\\processed\\'
 to_tensor = ToTensor()
 
 model = Siamese_nn()
-weights = torch.load(f'{project_dir}/models/new_test1')
+weights = torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka')
 model.load_state_dict(weights)
 model.eval()
 
@@ -84,9 +84,8 @@ def login():
     existing_user_scan = torch.unsqueeze(existing_user_scan, dim = 0)
     scan_taken = torch.unsqueeze(scan_taken, dim = 0)
     
-    print(existing_user_scan.shape, scan_taken.shape)
-    
-    
+    #print(existing_user_scan.shape, scan_taken.shape)
+     
     plt.subplot(1,2,1)
     plt.imshow(exist_scan)
     plt.subplot(1,2,2)
@@ -106,5 +105,7 @@ def remove(username):
 
 #%%
 #register()
-#%%
+
 login()
+
+# %%
