@@ -65,7 +65,7 @@ def register():
         username_to_check = input("Enter a username: ")
         if isValidUsername(username_to_check):
             print(f"The username '{(username_to_check):}' is valid!")
-            user_file_name = f'{project_dir}\\data\\raw\\{username_to_check}.bmp'
+            user_file_name = f'{project_dir}\\scans\\processed\\{username_to_check}.bmp'
             if not os.path.exists(user_file_name):
                 break
             else:
@@ -75,7 +75,7 @@ def register():
             print(f"The username '{username_to_check}' is not valid. It should contain only letters, numbers, hyphens, and underscores, and be between 3 and 20 characters long.")
     
     
-    path = scan.getPrint(username_to_check)
+    scan.getPrint(username_to_check)
     scan.scan_preprocess(username_to_check)
     
 
@@ -102,7 +102,7 @@ def login():
     
     try:
         existing_user_scan = Image.open(f'{processed_path}{username}.bmp')
-        #path = scan.getPrint(f'{username}')
+        scan.getPrint(f'{username}')
         scan_taken = scan.scan_preprocess(f'{username}', login=True)
         
     except Exception as e:
@@ -112,28 +112,30 @@ def login():
     scan_taken = to_tensor(scan_taken)
     
     
-    exist_scan = torch.permute(existing_user_scan, (1,2,0))
-    scan_taken2 = torch.permute(scan_taken, (1,2,0))
+    #exist_scan = torch.permute(existing_user_scan, (1,2,0))
+    #scan_taken2 = torch.permute(scan_taken, (1,2,0))
+    
+    
+     
+    # plt.subplot(1,2,1)
+    # plt.imshow(exist_scan)
+    # plt.subplot(1,2,2)
+    # plt.imshow(scan_taken2)
     
     existing_user_scan = torch.unsqueeze(existing_user_scan, dim = 0)
     scan_taken = torch.unsqueeze(scan_taken, dim = 0)
-    
-    #print(existing_user_scan.shape, scan_taken.shape)
-     
-    plt.subplot(1,2,1)
-    plt.imshow(exist_scan)
-    plt.subplot(1,2,2)
-    plt.imshow(scan_taken2)
+    # print(existing_user_scan.shape, scan_taken.shape)
+   
     with torch.no_grad():
         out1, out2 = model(existing_user_scan, scan_taken)
     confidence = F.pairwise_distance(out1, out2)
     
-    print(confidence)
-    if confidence < 0.5:
+    print('Confidence: ', confidence.item())
+    if confidence < 0.7:
         print('Access granted')
         return True
     else:
-        print('Access NOT granted')
+        print('Access denied')
         return False
 
 #%%
@@ -158,26 +160,31 @@ def mainProgram():
         print("9 - Exit")
 
         choice = input("Enter your choice: ")
-
+        os.system('cls')
         if choice == '1':
-            if login():
+            l = login()
+            if l:
                 while True:
                     print("1 - Sign out")
                     print("9 - Exit")
                     choiceInsideSystem = input("Enter your choice: ")
                     if choiceInsideSystem == '1':
-                        continue
-                    elif choiceInsideSystem == '9':
+                        os.system('cls1')
                         break
+                    elif choiceInsideSystem == '9':
+                        return
                     else:
                         print("Invalid choice. Please enter a valid option.")
         elif choice == '2':
             register()
+            os.system('cls')
         elif choice == '9':
             print("Exiting the menu. Goodbye!")
             break
         else:
             print("Invalid choice. Please enter a valid option.")
-    pass
+    return
 
+# %%
+mainProgram()
 # %%

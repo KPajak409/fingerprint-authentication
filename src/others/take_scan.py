@@ -40,7 +40,6 @@ def scan_preprocess(file_name, login = False):
 
     img = np.array(Image.open(f'{source_path_raw}{file_name}.bmp'))
     left, right, up, down = 0,0,0,0
-    print(img.shape)
 
     # cutting white space in images
     for i in range(img.shape[0]-1): 
@@ -76,28 +75,28 @@ def scan_preprocess(file_name, login = False):
         n_rows_to_del = height - target_height
         if n_rows_to_del%2==0:
             n_rows_half = int(n_rows_to_del/2)
-            bottom_idx = img.shape[0]-n_rows_half
-            img_final = Image.fromarray(img[n_rows_half:bottom_idx, :])
+            bottom_idx = img_binarized.shape[0]-n_rows_half
+            img_final = Image.fromarray(img_binarized[n_rows_half:bottom_idx, :])
         else:
             n_rows_half = int(math.floor(n_rows_to_del/2))
-            bottom_idx = img.shape[0]-n_rows_half-1
-            img_final = Image.fromarray(img[n_rows_half:bottom_idx, :])   
-        print(f'cutting H {file_name}.bmp')
+            bottom_idx = img_binarized.shape[0]-n_rows_half-1
+            img_final = Image.fromarray(img_binarized[n_rows_half:bottom_idx, :])   
+        #print(f'cutting H {file_name}.bmp')
     elif round(height/width, 3) < 1.125:
         target_width = round(height/1.125)
         n_cols_to_del = width - target_width
         if n_cols_to_del%2==0:
             n_cols_half = int(n_cols_to_del/2)
-            right_idx = img.shape[1]-n_cols_half
-            img_final = Image.fromarray(img[:, n_cols_half:right_idx])
+            right_idx = img_binarized.shape[1]-n_cols_half
+            img_final = Image.fromarray(img_binarized[:, n_cols_half:right_idx])
         else:
             n_cols_half = int(math.floor(n_cols_to_del/2))
-            right_idx = img.shape[1]-n_cols_half-1
-            img_final = Image.fromarray(img[:, n_cols_half:right_idx])  
-        print(f'cutting W {file_name}.bmp')
-
-    # scale down and save
-    img_final = Image.fromarray(img_binarized)
+            right_idx = img_binarized.shape[1]-n_cols_half-1
+            img_final = Image.fromarray(img_binarized[:, n_cols_half:right_idx])  
+    else:
+       img_final = Image.fromarray(img_binarized)
+    
+       
     img_final.thumbnail((136,153))
     if login:
         os.remove(f'{source_path_raw}{file_name}.bmp')
