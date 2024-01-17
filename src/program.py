@@ -1,4 +1,8 @@
 #%%
+"""
+This module is main program for operating on the system with
+sign in and registration operations.
+"""
 import others.take_scan as scan
 from pathlib import Path
 import glob, os, torch
@@ -20,6 +24,16 @@ model.load_state_dict(weights)
 model.eval()
 
 def isValidUsername(username):
+    """
+    This method is responsible for validation of username 
+    given by user.
+    
+    Simple rules applied by regex operation:
+        - username includes small and big characters,
+        - username includes digits from 0 to 9,
+        - username includes special characters such as: - and _ ,
+        - username has to be between 3 and 20 characters long.
+    """
     pattern = r'^[a-zA-Z0-9_-]{3,20}$'
     match = re.match(pattern, username)
     if match:
@@ -36,6 +50,16 @@ def isValidUsername(username):
 
 
 def register():
+    """
+    This method is responsible for registration of user to the system.
+    
+    User writes down their desired username in the console.
+    It is checked for validation regarding semantics and whether
+    or not the username is already taken.
+    
+    If everything is successful then operation of fingerprint retrieval
+    starts. Fingerprint then will be preprocessed and saved in '../data/raw' path.
+    """
     print('Please write down your desired username: ')
     while True:
         username_to_check = input("Enter a username: ")
@@ -56,6 +80,16 @@ def register():
     
 
 def login():
+    """
+    This method is responsible for signing in to the system.
+    
+    User writes down their username in the console. It is checked
+    whether or not such username exists.
+    
+    If it exists then user will be asked to scan his fingerprint. 
+    After successful scanning, then user's registration fingerprint will be retrieved. 
+    If verification will go successfully, then access to the system will be granted.
+    """
     print('Please write down your username: ')
     while True:
         username = input('Enter a username: ')
@@ -98,14 +132,40 @@ def login():
     if confidence < 0.5:
         print('Access granted')
         return
-    
-
-def remove(username):
-    pass
+    else:
+        print('Access NOT granted')
+        return
 
 #%%
-#register()
 
-login()
+def mainProgram():
+    """
+    This method is responsible for console menu, in which we can
+    try to login or/and register to the system.
+    
+    The function showcases 3 options: 1-login, 2-registration and 9-exit the program.
+    
+    First option triggers login() function.
+    Second option triggers register() function.
+    Last option exits the program and shuts down the console.
+    """ 
+    while True:
+        print("Menu:")
+        print("1 - Login")
+        print("2 - Registration")
+        print("9 - Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            login()
+        elif choice == '2':
+            register()
+        elif choice == '9':
+            print("Exiting the menu. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please enter a valid option.")
+    pass
 
 # %%

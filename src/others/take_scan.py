@@ -1,11 +1,19 @@
 #%%
+"""
+This module is responsible for retrieval of fingerprints and preprocessing them
+for further usage in login and registration operations.
+
+Parameters of scanner and connection of it:
+    - Image Height: 288px,
+    - Image Width: 256px,
+    - PortSetting for Scanner: ['COM6', 57600].
+"""
 from pathlib import Path
 from PIL import Image
 import os, glob, math
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-
 
 current_dir = Path(__file__)
 project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
@@ -14,6 +22,14 @@ dest_path_processed = f'{project_dir}\\scans\\processed\\'
 source_path_raw = f'{project_dir}\\scans\\raw\\'
     
 def scan_preprocess(file_name, login = False):
+    """
+    This method is responsible for preprocessing retrieved fingerprint
+    from scanner.
+    
+    Operations performed on the fingerprint are identical as the 
+    dataset images operations (check documentation for 
+    fingerprint_dataset module for further details).
+    """
     threshold = 160
 
     img = np.array(Image.open(f'{source_path_raw}{file_name}.bmp'))
@@ -104,6 +120,20 @@ portSettings = ['COM6', 57600]
 
 # assemble bmp header for a grayscale image
 def assembleHeader(width, height, depth, cTable=False):
+    """
+    This method sets up the header for retrieval of fingerprint
+    with scanner.
+    
+    Header sets up settings for our external scanner, mainly properties such as file:
+        - format,
+        - size,
+        - header size,
+        - width,
+        - height,
+        - depth,
+        - image size,
+        - image resolution.
+    """
     header = bytearray(HEADER_SZ)
     header[0:2] = b'BM'   # bmp signature
     byte_width = int((depth*width + 31) / 32) * 4
@@ -132,6 +162,20 @@ def assembleHeader(width, height, depth, cTable=False):
     
 
 def getPrint(login):
+    """
+    This method manages the retrieval of fingerprint using
+    external scanner. The output in bytearray is red and decoded
+    to image format.
+    
+    First it uses assembleHeader method for image retrieval properties.
+    
+    Then, when scanner is activated, (checking if its correctly connected to computer)
+    signals readiness to get user's fingerprint scan. 
+    
+    When scan gets retrieved successfully, it is going to be decoded and
+    saved to folder with user's scans for further operations involving login
+    and registration.
+    """
     # version for testing
     # out = open(input("Enter filename/path of output file (without extension): ")+'.bmp', 'xb',)
     # path to create scan named by user id

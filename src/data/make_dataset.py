@@ -1,4 +1,17 @@
 #%%
+"""This module is responsible for transforming data. 
+Its main goal is to preprocess data, via written script, by perfoming following operations:
+
+    - cutting excessive white background of the images,
+    - performs following transformation operations:
+        - dilatation - fills smallers holes on images and thickens them,
+        - erosion - removes any floating noise and slightly dilutes lines in images,
+        - binarization - changes pixels to 0 or 255, based on a threshold calculated globally
+                         on all pixels per image.
+    - resizes pictures to 136px x 153px size, calculated by average size of samples.
+
+Preprocessed data is saved on "..\data\processed" folder.                         
+"""
 from pathlib import Path
 from PIL import Image
 import os, glob, math

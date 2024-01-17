@@ -1,4 +1,14 @@
 #%%
+"""
+This module is responsible for following tasks:
+    - Setting training parameters and splitting data to different DataLoaders,
+    - Training neural network with Contrastive Loss function,
+    - Testing results of training, calculating metrics and visualizing results,
+    - Tracking training progress with "Weights and Biases" online service.
+    
+Module consists of ContrastiveLoss class for calculating loss during training and several
+functions which perform mentioned tasks.
+"""
 import torch, wandb, os
 import torch.optim as optim
 import torch.nn as nn
@@ -35,11 +45,35 @@ config = dict(
 )
 
 class ContrastiveLoss(nn.Module):
+    """
+    ContrastiveLoss class uses nn.Module sourced from PyTorch framework to calculate loss for training process.
+    
+    Class consists of following methods:
+        - __init__(): responsible for instantiating the class and sets default margin,
+        - forward(output1, output2, label): calculates loss based on the contrastive operation
+                                            (more details inside documentation of function).
+    """
     def __init__(self, margin=1.0):
+        """
+        Method is responsible for initialization of the ContrastiveLoss object and sets default margin, which
+        is a part of calculation of loss itself.
+        """
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
 
     def forward(self, output1, output2, label):
+        """
+        Method is responsible for calculating contrastive loss by calculating distance between features.
+        
+        Firstly, using pairwise_distance() function we calculate Euclidean distance between
+        images and the output of distance is kept within same dimensions due to "keepdim" parameter.
+        
+        Secondly, by calculating mean of similarity and dissimilarity by following rules:
+            - for dissimilar pairs, model is penalized if distance is too small,
+            - for similar pairs, model is penalized if distance is too big than margin.
+            
+        Values closer to 0 are considered more similar and values further from zero are considered more dissimilar.
+        """
         distance = F.pairwise_distance(output1, output2, keepdim=True)
         lossContrastive = torch.mean((1 - label) * torch.pow(distance, 2) +
                                       (label) * torch.pow(torch.clamp(self.margin - distance, min=0.0), 2))
@@ -47,6 +81,15 @@ class ContrastiveLoss(nn.Module):
 
 
 def make(config):
+    """
+    This method is responsible for preparation of training process and all important components.
+    
+    It does the following:
+        - creates siamese dataset based on SiameseDataset class,
+        - splits data to training dataset and testing dataset based on hyperparameter of split,
+        - creates DataLoaders for both training and testing data,
+        - sets criterion and optimization methods for training process.
+    """
     transform = transforms.Compose([transforms.ToTensor()])
 
     siameseDataset = SiameseDataset(transform=transform, device=device)
@@ -62,6 +105,16 @@ def make(config):
 
 
 def train_and_log(model, train_loader, test_loader, criterion, optimizer, config):
+    """
+    This method is responsible for training process of neural network and logging results to
+    Weights and Biases online service.
+    
+    Performs the following:
+        - retrieves data from training DataLoader,
+        - uploads it to criterion to calculate loss,
+        - updates optimizer and loss function,
+        - logs data to Weights and Biases via specialized object "wandb" actions.
+    """
     images1, images2, label_test = next(iter(test_loader))
     images1 = images1.to(device)
     images2 = images2.to(device)
@@ -100,6 +153,15 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
                 
              
 def test(model, test_loader, criterion, device):
+    """
+    This method is responsible for testing trained network on test DataLoader 
+    and visualizes samples and their results.
+    
+    Function performs the following:
+        - retrieves data from testing DataLoader,
+        - calculates manually distance via pairwise_distance() function,
+        - visualizes results as plot using matplotlib library.
+    """
     import matplotlib.pyplot as plt
 
     images1, images2, label_test = next(iter(test_loader))
@@ -127,6 +189,21 @@ def test(model, test_loader, criterion, device):
           
           
 def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshold=1.0):
+    """
+    This method is responsible for calculating confusion matrix values for analyzing
+    metrics and calculates threshold of verification, meaning what is the degree of
+    similarity from which access to system is granted. 
+    
+    Also calculates histogram which showcases the trend of values provided
+    by testing our network.
+    
+    This method does the following:
+        - retrieves data from all available samples,
+        - calculates distance between samples,
+        - appends results to prediction and label array,
+        - removes duplicate values from value history for histogram,
+        - visualizes confusion matrix and histogram.
+    """
     with torch.no_grad():
         predicted = []
         actual = []
@@ -169,6 +246,16 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshol
 
 
 def model_pipeline(hyperparameters, wandb_mode = 'online'): 
+    """
+    This method is responsible for triggering all of the other methods in set order and
+    loads trained weights of a previously trained model from a file (if such file is present).
+    
+    The order of methods triggered is:
+        1. make(config)
+        2. train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
+        3. test(model, test_loader, criterion, 'cpu')
+        4. calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0)
+    """
     with wandb.init(project='fingerprint-authentication-ISU', config=hyperparameters, mode = wandb_mode):
         config = wandb.config
         
