@@ -1,6 +1,6 @@
 #%%
 """
-This module is main program for operating on the system with
+This module is a main program for operating on the system with
 sign in and registration operations.
 """
 import others.take_scan as scan
@@ -58,7 +58,7 @@ def register():
     or not the username is already taken.
     
     If everything is successful then operation of fingerprint retrieval
-    starts. Fingerprint then will be preprocessed and saved in '../data/raw' path.
+    starts.
     """
     print('Please write down your desired username: ')
     while True:
@@ -131,10 +131,10 @@ def login():
     print(confidence)
     if confidence < 0.5:
         print('Access granted')
-        return
+        return True
     else:
         print('Access NOT granted')
-        return
+        return False
 
 #%%
 
@@ -148,6 +148,8 @@ def mainProgram():
     First option triggers login() function.
     Second option triggers register() function.
     Last option exits the program and shuts down the console.
+    
+    If sign in is successful, then your only option is to log out or exit.
     """ 
     while True:
         print("Menu:")
@@ -158,7 +160,17 @@ def mainProgram():
         choice = input("Enter your choice: ")
 
         if choice == '1':
-            login()
+            if login():
+                while True:
+                    print("1 - Sign out")
+                    print("9 - Exit")
+                    choiceInsideSystem = input("Enter your choice: ")
+                    if choiceInsideSystem == '1':
+                        continue
+                    elif choiceInsideSystem == '9':
+                        break
+                    else:
+                        print("Invalid choice. Please enter a valid option.")
         elif choice == '2':
             register()
         elif choice == '9':

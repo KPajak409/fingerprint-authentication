@@ -98,7 +98,7 @@ $(function(){initNavTree('classsrc_1_1models_1_1siamese__nn_1_1_siamese__nn.html
 </div><!--header-->
 <div class="contents">
 
-<p>Siamese_nn class uses nn.Module sourced from PyTorch framework to create Sequential model for the model.  
+<p>Siamese_nn class inherits nn.Module from PyTorch framework to create Sequential model.  
  <a href="#details">More...</a></p>
 <div class="dynheader">
 Inheritance diagram for Siamese_nn:</div>
@@ -113,18 +113,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:abdd362d5f799ad16b5d6700efe590290"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes two important components of Siamese Neural Network:  <br /></td></tr>
 <tr class="separator:abdd362d5f799ad16b5d6700efe590290"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa1d58749c0921ddd5644d7dc3244704a" id="r_aa1d58749c0921ddd5644d7dc3244704a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1models_1_1siamese__nn_1_1_siamese__nn_aa1d58749c0921ddd5644d7dc3244704a.html#aa1d58749c0921ddd5644d7dc3244704a">forwardOne</a> (self, x)</td></tr>
-<tr class="memdesc:aa1d58749c0921ddd5644d7dc3244704a"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method performs single action of forwarding for one image.  <br /></td></tr>
+<tr class="memdesc:aa1d58749c0921ddd5644d7dc3244704a"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method performs action of forward pass of single image.  <br /></td></tr>
 <tr class="separator:aa1d58749c0921ddd5644d7dc3244704a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae07fc9a4345a0c379526c78b9973dc1c" id="r_ae07fc9a4345a0c379526c78b9973dc1c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsrc_1_1models_1_1siamese__nn_1_1_siamese__nn_ae07fc9a4345a0c379526c78b9973dc1c.html#ae07fc9a4345a0c379526c78b9973dc1c">forward</a> (self, input1, input2)</td></tr>
-<tr class="memdesc:ae07fc9a4345a0c379526c78b9973dc1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method performs forwarding for dataset sample which includes a pair of images.  <br /></td></tr>
+<tr class="memdesc:ae07fc9a4345a0c379526c78b9973dc1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method performs forward pass for dataset sample which includes a pair of images.  <br /></td></tr>
 <tr class="separator:ae07fc9a4345a0c379526c78b9973dc1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Siamese_nn class uses nn.Module sourced from PyTorch framework to create Sequential model for the model. </p>
+<div class="textblock"><p>Siamese_nn class inherits nn.Module from PyTorch framework to create Sequential model. </p>
 <p>Class consists of following methods: </p><pre class="fragment">- __init__(): responsible for creating featureExtractor that retrieves fingerprint features and
-              fc which has Fully Connected layers to create similarity vectors,
-- forwardOne(x): responsible for single action of forwarding in neural network,
-- forward(input1, input2): repsonsible for forwarding two samples at the same time, due to nature of
+              fc which has Fully Connected layer to create similarity vectors,
+- forwardOne(x): responsible for single action of forward pass in neural network,
+- forward(input1, input2): responsible for forward pass of two samples at the same time, due to nature of
                            Siamese Network. 
 </pre> </div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>C:/Users/legio/Desktop/finger/fingerprint-authentication/src/models/<a class="el" href="siamese__nn_8py.html">siamese_nn.py</a></li>

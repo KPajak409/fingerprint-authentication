@@ -88,7 +88,7 @@ def make(config):
         - creates siamese dataset based on SiameseDataset class,
         - splits data to training dataset and testing dataset based on hyperparameter of split,
         - creates DataLoaders for both training and testing data,
-        - sets criterion and optimization methods for training process.
+        - sets model weights and optimization methods for training process.
     """
     transform = transforms.Compose([transforms.ToTensor()])
 
@@ -155,7 +155,7 @@ def train_and_log(model, train_loader, test_loader, criterion, optimizer, config
 def test(model, test_loader, criterion, device):
     """
     This method is responsible for testing trained network on test DataLoader 
-    and visualizes samples and their results.
+    and visualizes samples with their results.
     
     Function performs the following:
         - retrieves data from testing DataLoader,
@@ -191,15 +191,12 @@ def test(model, test_loader, criterion, device):
 def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshold=1.0):
     """
     This method is responsible for calculating confusion matrix values for analyzing
-    metrics and calculates threshold of verification, meaning what is the degree of
-    similarity from which access to system is granted. 
-    
-    Also calculates histogram which showcases the trend of values provided
+    metric. Also calculates histogram which showcases the trend of values provided
     by testing our network.
     
     This method does the following:
         - retrieves data from all available samples,
-        - calculates distance between samples,
+        - calculates distance for every pair,
         - appends results to prediction and label array,
         - removes duplicate values from value history for histogram,
         - visualizes confusion matrix and histogram.
@@ -247,14 +244,19 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshol
 
 def model_pipeline(hyperparameters, wandb_mode = 'online'): 
     """
-    This method is responsible for triggering all of the other methods in set order and
-    loads trained weights of a previously trained model from a file (if such file is present).
+    This method is responsible for triggering all of the other methods in set order.
     
     The order of methods triggered is:
         1. make(config)
         2. train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
         3. test(model, test_loader, criterion, 'cpu')
         4. calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0)
+        
+    If we want to load a pre-trained model, then we must do the following in model_pipeline() function:
+        1. comment train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
+        2. uncomment lines:
+            - weights =  torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka'),
+            - model.load_state_dict(weights).
     """
     with wandb.init(project='fingerprint-authentication-ISU', config=hyperparameters, mode = wandb_mode):
         config = wandb.config

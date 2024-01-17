@@ -1,12 +1,15 @@
 #%%
 """
-This module is responsible for retrieval of fingerprints and preprocessing them
+This module is responsible for taking scans of fingerprints and preprocessing them
 for further usage in login and registration operations.
 
 Parameters of scanner and connection of it:
     - Image Height: 288px,
     - Image Width: 256px,
-    - PortSetting for Scanner: ['COM6', 57600].
+    - PortSettings for Scanner: [
+        connection port between computer and Arduino,
+        baud rate of UART interface
+    ].
 """
 from pathlib import Path
 from PIL import Image
@@ -29,6 +32,9 @@ def scan_preprocess(file_name, login = False):
     Operations performed on the fingerprint are identical as the 
     dataset images operations (check documentation for 
     fingerprint_dataset module for further details).
+    
+    After transformation of fingerprint scan, it is relocated from 
+    folder '../scans/raw' to folder '../scans/processed'.
     """
     threshold = 160
 
@@ -94,7 +100,7 @@ def scan_preprocess(file_name, login = False):
     img_final = Image.fromarray(img_binarized)
     img_final.thumbnail((136,153))
     if login:
-        #os.remove(f'{source_path_raw}{file_name}.bmp')
+        os.remove(f'{source_path_raw}{file_name}.bmp')
         return img_final
     else:
         img_final.save(dest_path_processed+file_name+'.bmp')
@@ -121,18 +127,7 @@ portSettings = ['COM6', 57600]
 # assemble bmp header for a grayscale image
 def assembleHeader(width, height, depth, cTable=False):
     """
-    This method sets up the header for retrieval of fingerprint
-    with scanner.
-    
-    Header sets up settings for our external scanner, mainly properties such as file:
-        - format,
-        - size,
-        - header size,
-        - width,
-        - height,
-        - depth,
-        - image size,
-        - image resolution.
+    This method sets up the header of .BMP file, where scan will be saved.
     """
     header = bytearray(HEADER_SZ)
     header[0:2] = b'BM'   # bmp signature
@@ -164,16 +159,15 @@ def assembleHeader(width, height, depth, cTable=False):
 def getPrint(login):
     """
     This method manages the retrieval of fingerprint using
-    external scanner. The output in bytearray is red and decoded
-    to image format.
+    external scanner.
     
-    First it uses assembleHeader method for image retrieval properties.
+    First it uses assembleHeader() method for image retrieval properties.
     
     Then, when scanner is activated, (checking if its correctly connected to computer)
-    signals readiness to get user's fingerprint scan. 
+    signals readiness to take user's fingerprint scan. 
     
-    When scan gets retrieved successfully, it is going to be decoded and
-    saved to folder with user's scans for further operations involving login
+    When scan is retrieved successfully, it is going to be decoded and
+    saved temporarily to folder '../scans/raw' for further operations involving login
     and registration.
     """
     # version for testing

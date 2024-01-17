@@ -110,12 +110,20 @@ $(function(){initNavTree('namespacesrc_1_1models_1_1train__model_a609acf74fd9421
       </table>
 </div><div class="memdoc">
 
-<p>This method is responsible for triggering all of the other methods in set order and loads trained weights of a previously trained model from a file. </p>
+<p>This method is responsible for triggering all of the other methods in set order. </p>
 <p>The order of methods triggered is:</p><ol type="1">
 <li>make(config)</li>
 <li>train_and_log(model, train_loader, test_loader, criterion, optimizer, config)</li>
 <li>test(model, test_loader, criterion, 'cpu')</li>
-<li>calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0) </li>
+<li>calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0)</li>
+</ol>
+<p>If we want to load a pre-trained model, then we must do the following in model_pipeline() function:</p><ol type="1">
+<li>comment train_and_log(model, train_loader, test_loader, criterion, optimizer, config)</li>
+<li>uncomment lines:<ul>
+<li>weights = torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka'),</li>
+<li>model.load_state_dict(weights). </li>
+</ul>
+</li>
 </ol>
 
 </div>

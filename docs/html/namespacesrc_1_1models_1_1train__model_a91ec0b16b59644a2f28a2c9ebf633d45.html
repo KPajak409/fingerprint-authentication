@@ -120,13 +120,13 @@ $(function(){initNavTree('namespacesrc_1_1models_1_1train__model_a91ec0b16b59644
       </table>
 </div><div class="memdoc">
 
-<p>This method is responsible for calculating confusion matrix values for analyzing metrics and calculates threshold of verification, meaning what is the degree of similarity from which access to system is granted. </p>
+<p>This method is responsible for calculating confusion matrix values for analyzing metric. </p>
 <p>Also calculates histogram which showcases the trend of values provided by testing our network.</p>
 <p>This method does the following:</p><ul>
 <li>retrieves data from all available samples,</li>
-<li>calculates distance between samples,</li>
+<li>calculates distance for every pair,</li>
 <li>appends results to prediction and label array,</li>
-<li>removes duplicate from value history for histogram,</li>
+<li>removes duplicate values from value history for histogram,</li>
 <li>visualizes confusion matrix and histogram. </li>
 </ul>
 

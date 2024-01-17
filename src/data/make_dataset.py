@@ -5,7 +5,6 @@ Its main goal is to preprocess data, via written script, by perfoming following 
     - cutting excessive white background of the images,
     - performs following transformation operations:
         - dilatation - fills smallers holes on images and thickens them,
-        - erosion - removes any floating noise and slightly dilutes lines in images,
         - binarization - changes pixels to 0 or 255, based on a threshold calculated globally
                          on all pixels per image.
     - resizes pictures to 136px x 153px size, calculated by average size of samples.
@@ -68,7 +67,6 @@ file_names_processed = sorted(os.listdir(f'{project_dir}\\data\\processed\\'))
 for path in paths_processed:
     img = cv2.imread(path, 0)
     img_dilation = cv2.dilate(img, (5,5), iterations=1)
-    img_erosion = cv2.erode(img, (5,5), iterations=2)
     img_binarized = cv2.adaptiveThreshold(img_dilation, 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
                                                cv2.THRESH_BINARY, 11, 2)
     #final_frame = cv2.hconcat([img, img_dilation, img_erosion, img_binarized])

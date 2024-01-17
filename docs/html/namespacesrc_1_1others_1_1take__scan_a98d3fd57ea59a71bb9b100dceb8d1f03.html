@@ -107,10 +107,9 @@ $(function(){initNavTree('namespacesrc_1_1others_1_1take__scan_a98d3fd57ea59a71b
 </div><div class="memdoc">
 
 <p>This method manages the retrieval of fingerprint using external scanner. </p>
-<p>The output in bytearray is red and decoded to image format.</p>
-<p>First it uses assembleHeader method for image retrieval properties.</p>
-<p>Then activated scanner (checking if its correctly connected to computer) signals the readiness to get user's fingerprint scan.</p>
-<p>When scan gets retrieved successfully, it is going to be decoded and saved to folder with user's scans for further operations involving login and registration. </p>
+<p>First it uses assembleHeader() method for image retrieval properties.</p>
+<p>Then, when scanner is activated, (checking if its correctly connected to computer) signals readiness to take user's fingerprint scan.</p>
+<p>When scan is retrieved successfully, it is going to be decoded and saved temporarily to folder '../scans/raw' for further operations involving login and registration. </p>
 
 </div>
 </div>
