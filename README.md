@@ -7,8 +7,7 @@
 
 # Documentation
 
-Documentation is in the path: docs/html/index.html.
-Opening index.html file will open documentation.
+Documentation is in the path: docs/html/index.html
 
 # Installation
 
