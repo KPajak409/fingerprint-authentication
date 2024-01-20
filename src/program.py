@@ -19,7 +19,7 @@ processed_path = f'{project_dir}\\scans\\processed\\'
 to_tensor = ToTensor()
 
 model = Siamese_nn()
-weights = torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka')
+weights = torch.load(f'{project_dir}/trained_model', map_location='cpu')
 model.load_state_dict(weights)
 model.eval()
 
