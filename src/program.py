@@ -19,7 +19,7 @@ processed_path = f'{project_dir}\\scans\\processed\\'
 to_tensor = ToTensor()
 
 model = Siamese_nn()
-weights = torch.load(f'{project_dir}/src/model_weights')
+weights = torch.load(f'{project_dir}/model_weights')
 model.load_state_dict(weights)
 model.eval()
 
