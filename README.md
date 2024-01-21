@@ -28,8 +28,8 @@ Documentation is in the path: docs/html/index.html
 # User guide to starting the program
 
 - Download pre-trained model from this link: https://mega.nz/file/Bi8k1JQR#Z3IdFrD2PWe9cQ5olG6QkAe-8NTO7L5-kCPRCPTqzUg,
-- Put the file to the 'src' folder of cloned project on your device,
-- Relocate to the directory inside 'src' file,
+- Put the file in the root directoru of the cloned project on your device,
+- Make sure to be on the root directory in the console,
 - Use following command to trigger console user interface: python program.py.
 
 
