@@ -9,7 +9,9 @@ Fingerprint scanner model: SEN0188
 Manufacturer: DFRobot
 
 Link to user's manual of scanner: https://wiki.dfrobot.com/SEN0188_Fingerprint
+
 Link to official manufacturer's scanner: https://www.dfrobot.com/index.php?route=product/product&product_id=1343&search=sen0188&description=true#.Vl6XMb_W2Hs
+
 Link to polish offer for scanner: https://botland.com.pl/czytniki-linii-papilarnych/5060-czytnik-linii-papilarnych-z70-czujnik-odciskow-palcow-5903351241434.html
 
 # Documentation
@@ -23,7 +25,7 @@ Documentation is in the path: docs/html/index.html
      -  conda env create -f environment.yml
      -  conda activate isu-proj
  
-# User guide
+# User guide to starting the program
 
 - Download pre-trained model from this link: https://mega.nz/file/Bi8k1JQR#Z3IdFrD2PWe9cQ5olG6QkAe-8NTO7L5-kCPRCPTqzUg,
 - Put the file to the 'src' folder of cloned project on your device,
