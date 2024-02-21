@@ -42,16 +42,16 @@ class Siamese_nn(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(64, 128, kernel_size=3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3),
+            nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(256, 256, kernel_size=3),
+            nn.Conv2d(128, 128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten()
         )
         self.fc = nn.Sequential(
-            nn.Linear(57344, 512),
+            nn.Linear(28672, 256),
             nn.ReLU(inplace=True)
         )
         
@@ -79,5 +79,5 @@ class Siamese_nn(nn.Module):
 
 if __name__ == '__main__':
     model = Siamese_nn().to('cuda')
-    summary(model, [(1, 153, 136), (1, 153, 136)], 12)
+    summary(model, [(1, 153, 136), (1, 153, 136)], 1)
 # %%

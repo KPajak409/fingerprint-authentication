@@ -3,6 +3,11 @@
 Project utilizes a **Siamese Neural Network** for fingerprint comparison and authentication. This system aims to verify whether two fingerprint scans belong to the same individual. 
 Here are the key components and implementation details:
 
+
+## Project demo
+To test how model performs at different image pairs, you can find demo version at the link below.\
+https://huggingface.co/spaces/Padzong/fingerprint-auth-app
+
 ## Project overview
 1. The primary goal of this project is to create a robust and accurate fingerprint authentication system.
 2. It leverages a Siamese Neural Network, which is well-suited for similarity matching tasks like fingerprint matching.
