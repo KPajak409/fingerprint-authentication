@@ -1,23 +1,34 @@
 # Fingerprint authentication system
 
-Project utilizes a **Siamese Neural Network** for fingerprint comparison and authentication. This system aims to verify whether two fingerprint scans belong to the same individual. 
-Here are the key components and implementation details:
+Project utilizes a **Siamese Neural Network** for fingerprint comparison and authentication. This system aims to verify whether two fingerprint scans belong to the same individual.
+* The primary goal of this project is to create a robust and accurate fingerprint authentication system.
+* It leverages a Siamese Neural Network, which is well-suited for similarity matching tasks like fingerprint matching.
+
+# Table of contents
+* [Workflow](#WorkFlow)
+* [Required software](#Required-software)
+* [Fingerprint scanner](#Fingerprint-scanner)
+* [Documentation](#Documentation)
+* [Installation](#Installation)
+* [User guide](#User-guide-to-starting-the-program)
 
 
 ## Project demo
 To test how model performs at different image pairs, you can find demo version at the link below.\
 https://huggingface.co/spaces/Padzong/fingerprint-auth-app
 
-## Project overview
-1. The primary goal of this project is to create a robust and accurate fingerprint authentication system.
-2. It leverages a Siamese Neural Network, which is well-suited for similarity matching tasks like fingerprint matching.
-3. The system compares pairs of fingerprint scans and determines whether they correspond to the same person.
-
-## Workflow
+# Workflow
 ### Data Collection:
 * Fingerprint scans are obtained using a physical scanner.
 * The scanner communicates with an Arduino board, which acts as an interface between the scanner and the computer.
 * The publicly available scans serve as the training and testing data for the neural network.
+### Data Cleaning and Preprocessing:
+* Removing samples of very poor quality.
+* Cutting excessive white background of the images.
+* Dilatation - fills smallers holes on images and thickens them.
+* binarization - changes pixels to 0 or 255, based on a threshold calculated globally on all pixels per image.
+* Adjust to a common aspect ratio for all images.
+* Downscaling prepared images to 136px x 153px size, this size allows to save the most of samples and is the same ratio as scans taken by scanner.
 ### Siamese Neural Network:
 * The Siamese architecture consists of two identical convolutional neural networks (twins) that share weights.
 * Each twin processes one of the input fingerprint images.
