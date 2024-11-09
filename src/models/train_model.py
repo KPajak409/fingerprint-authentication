@@ -13,7 +13,6 @@ import torch, wandb, os
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
-import imp
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -21,10 +20,6 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from src.models.siamese_nn import Siamese_nn
 from src.data.fingerprint_dataset import SiameseDataset
 from pathlib import Path
-
-#workaround 1
-#siameseNNSource = imp.load_source('siamese_nn', '../siamese_nn.py')
-#siameseDatasetSource = imp.load_source('fingerprint_dataset', '../fingerprint_dataset.py')
 
 current_dir = Path(__file__)
 project_dir = [p for p in current_dir.parents if p.parts[-1]=='fingerprint-authentication'][0]
@@ -231,6 +226,7 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshol
         listToSetHistogramValues = set(histogramValues)
         uniqueHistogramValues = list(listToSetHistogramValues)
 
+        plt.rcParams.update({'font.size': 12})
         cm = confusion_matrix(actual, predicted)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot()
@@ -238,11 +234,13 @@ def calculateConfusionMatrixAndThreshold(model, data_loader, criterion, threshol
         plt.show()
         plt.figure(1)
         plt.hist(histogramValues, bins=len(uniqueHistogramValues))
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
         #plt.ylim(50)
         plt.show()
 
 
-def model_pipeline(hyperparameters, wandb_mode = 'online'): 
+def model_pipeline(hyperparameters, wandb_mode = 'disabled'): 
     """
     This method is responsible for triggering all of the other methods in set order.
     
@@ -263,12 +261,12 @@ def model_pipeline(hyperparameters, wandb_mode = 'online'):
         
         model, train_loader, test_loader, criterion, optimizer = make(config)
         print(model)
-        weights =  torch.load(f'{project_dir}/models/6cv_1fc_lr0001_douczka')
+        weights =  torch.load(f'{project_dir}/models/trained_model')
         model.load_state_dict(weights)
         #train_and_log(model, train_loader, test_loader, criterion, optimizer, config)
         test(model, test_loader, criterion, 'cpu')
         
-        calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 1.0)
+        calculateConfusionMatrixAndThreshold(model, test_loader, criterion, 0.5)
         
     return model, train_loader, test_loader, criterion, optimizer
 
