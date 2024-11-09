@@ -11,7 +11,7 @@ Project utilizes a **Siamese Neural Network** for fingerprint comparison and aut
 * [Documentation](#Documentation)
 * [Installation](#Installation)
 * [User guide](#User-guide-to-starting-the-program)
-
+* [Results](#Results-and-threshold-finding)
 
 ## Project demo
 To test how model performs at different image pairs, you can find demo version at the link below.\
@@ -79,6 +79,16 @@ Documentation is in the path: docs/html/index.html
 - Make sure to be on the root directory in the console,
 - Use following command to trigger console user interface: python program.py.
 
+# Results and threshold finding
+To achieve the best model performance it's crucial to find the appropriate threshold, to decide whether fingerprint scans represent the same or different finger. It is possible with help of distributing predicted values by model on histogram.
+
+![Value distribution](value_dist.png)
+
+The values are calculated by measuring euclidean distance between feature vectors received from model. The values close to 0 depict pairs representing the same fingerprint and values far from 0 depict pairs of different fingerprints. Thanks to visible gap in value distribution, the threshold value was chosen to be 0.5
+
+![Confusion matrix](confusionmatrix.png)
+
+With threshold at 0.5 the model achieves 100% accuracy at test samples, but it can be strict. It means sometimes scans representing the same fingerprint may be annotated as different.
 
 
 
